@@ -20,6 +20,43 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
             faculdade TEXT,
             criado_em TEXT DEFAULT (datetime('now','localtime'))
         )`);
+
+        // Cria a tabela de matérias e insere dados de exemplo
+        db.serialize(() => {
+            db.run(`CREATE TABLE IF NOT EXISTS materias (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL UNIQUE
+            )`);
+
+            const materias = ['Cálculo I', 'Algoritmos e Estrutura de Dados', 'Física I', 'Química Geral', 'Geometria Analítica'];
+            const stmt = db.prepare("INSERT OR IGNORE INTO materias (nome) VALUES (?)");
+            materias.forEach(materia => stmt.run(materia));
+            stmt.finalize();
+        });
+
+        // Cria a tabela de grupos
+        db.run(`CREATE TABLE IF NOT EXISTS grupos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            descricao TEXT,
+            materia_id INTEGER NOT NULL,
+            criador_id INTEGER NOT NULL,
+            criado_em TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (materia_id) REFERENCES materias(id),
+            FOREIGN KEY (criador_id) REFERENCES usuarios(id)
+        )`);
+
+        // Cria a tabela de notificações
+        db.run(`CREATE TABLE IF NOT EXISTS notificacoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            tipo TEXT NOT NULL, -- Ex: 'grupo_criado', 'mensagem_nova'
+            mensagem TEXT NOT NULL,
+            referencia_id INTEGER, -- ID do grupo, mensagem, etc.
+            lida INTEGER DEFAULT 0, -- 0 para não lida, 1 para lida
+            criado_em TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        )`);
     }
 });
 
