@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 
-// O arquivo do banco de dados será criado na raiz do projeto
-const DB_PATH = 'connexa.db';
+// O arquivo do banco de dados será criado na pasta src/database
+const DB_PATH = 'src/database/connexa.sqlite';
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
     if (err) {
