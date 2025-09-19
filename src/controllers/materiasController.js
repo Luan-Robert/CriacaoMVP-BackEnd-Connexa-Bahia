@@ -3,7 +3,6 @@ const Materia = require('../models/materiaModel');
 const listarMaterias = async (req, res) => {
     try {
         const materias = await Materia.findAll();
-        // Se não houver matérias, retorna um array vazio, como solicitado.
         res.status(200).json(materias);
     } catch (error) {
         console.error('Erro ao buscar matérias:', error);
