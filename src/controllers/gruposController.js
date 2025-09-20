@@ -4,7 +4,7 @@ const Materia = require('../models/materiaModel');
 
 const criarGrupo = async (req, res) => {
     const { nome, materiaId, objetivo, local, limiteParticipantes, isPublico } = req.body;
-    const criadorId = req.user.id; // Obtido do payload do JWT
+    const criadorId = req.usuario.id; // Obtido do payload do JWT
 
     try {
         // 1. Validação da matéria
@@ -28,6 +28,8 @@ const criarGrupo = async (req, res) => {
         await Notificacao.create({
             usuarioId: criadorId,
             mensagem: `Você criou o grupo: ${nome}`,
+            tipo: 'novo_grupo',
+            titulo: 'Novo Grupo Criado'
         });
 
         // 4. Resposta de sucesso

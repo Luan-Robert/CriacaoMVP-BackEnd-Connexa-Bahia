@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 
 // Importação das rotas
 const usuariosRoutes = require('./routes/usuariosRoutes');
@@ -18,11 +19,13 @@ const io = initWebSocket(server);
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
+app.use(cors());
 app.use(express.json());
 
 // Registro das rotas
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/materias', materiasRoutes);
+app.use('/api/grupos', gruposRoutes);
 app.use('/api/grupos/:groupId/anexos', anexosRoutes);
 
 // Servir arquivos estáticos

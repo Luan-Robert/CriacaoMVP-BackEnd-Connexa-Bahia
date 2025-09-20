@@ -1,24 +1,11 @@
-const db = require('../db');
+const { dbGet, dbAll } = require('../db');
 
 const findAll = () => {
-    return new Promise((resolve, reject) => {
-        db.all('SELECT id, nome FROM materias ORDER BY nome', [], (err, rows) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(rows);
-            }
-        });
-    });
+    return dbAll('SELECT id, nome FROM materias ORDER BY nome', []);
 };
 
 const findById = (id) => {
-    return new Promise((resolve, reject) => {
-        db.get('SELECT id, nome FROM materias WHERE id = ?', [id], (err, row) => {
-            if (err) reject(err);
-            resolve(row);
-        });
-    });
+    return dbGet('SELECT id, nome FROM materias WHERE id = ?', [id]);
 };
 
 module.exports = {

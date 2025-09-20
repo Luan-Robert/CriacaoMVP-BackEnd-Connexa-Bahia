@@ -26,8 +26,7 @@ const Grupo = require('../models/grupoModel');
 
 const isGroupAdmin = async (req, res, next) => {
     try {
-        const grupoId = req.params.id;
-        const usuarioId = req.user.id;
+const usuarioId = req.usuario.id;
 
         const isAdmin = await Grupo.isUserAdmin(grupoId, usuarioId);
 
@@ -45,7 +44,7 @@ const isGroupAdmin = async (req, res, next) => {
 const isGroupMember = async (req, res, next) => {
     try {
         const grupoId = req.params.groupId;
-        const usuarioId = req.user.id;
+        const usuarioId = req.usuario.id;
 
         const isMember = await Grupo.isUserMember(grupoId, usuarioId);
 

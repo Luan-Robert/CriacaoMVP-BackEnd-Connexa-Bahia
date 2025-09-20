@@ -49,20 +49,23 @@ function createTables() {
             data_criacao TEXT DEFAULT (datetime('now','localtime'))
         )`);
 
+        // Popula a tabela de matérias
+        populateMaterias();
+
         // Cria a tabela de grupos
         db.run(`CREATE TABLE IF NOT EXISTS grupos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome VARCHAR(255) NOT NULL,
-            materia VARCHAR(100) NOT NULL,
+            materia_id INTEGER NOT NULL,
             local VARCHAR(100) NOT NULL,
             objetivo VARCHAR(100) NOT NULL,
-            vagas_disponiveis INTEGER NOT NULL DEFAULT 0,
-            total_vagas INTEGER NOT NULL,
+            limite_participantes INTEGER NOT NULL,
             descricao TEXT,
             is_publico INTEGER DEFAULT 1,
             criador_id INTEGER NOT NULL,
             data_criacao TEXT DEFAULT (datetime('now','localtime')),
-            FOREIGN KEY (criador_id) REFERENCES usuarios(id) ON DELETE CASCADE
+            FOREIGN KEY (criador_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+            FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE CASCADE
         )`);
 
         // Cria a tabela de participantes do grupo
@@ -138,12 +141,12 @@ function createIndexes() {
         'CREATE INDEX IF NOT EXISTS idx_usuarios_ativo ON usuarios(ativo)',
         
         // Índices para grupos
-        'CREATE INDEX IF NOT EXISTS idx_grupos_materia ON grupos(materia)',
+        'CREATE INDEX IF NOT EXISTS idx_grupos_materia ON grupos(materia_id)',
         'CREATE INDEX IF NOT EXISTS idx_grupos_local ON grupos(local)',
         'CREATE INDEX IF NOT EXISTS idx_grupos_objetivo ON grupos(objetivo)',
         'CREATE INDEX IF NOT EXISTS idx_grupos_publico ON grupos(is_publico)',
         'CREATE INDEX IF NOT EXISTS idx_grupos_criador ON grupos(criador_id)',
-        'CREATE INDEX IF NOT EXISTS idx_grupos_vagas ON grupos(vagas_disponiveis)',
+        'CREATE INDEX IF NOT EXISTS idx_grupos_limite ON grupos(limite_participantes)',
         'CREATE INDEX IF NOT EXISTS idx_grupos_data_criacao ON grupos(data_criacao)',
         
         // Índices para grupo_participantes
@@ -188,6 +191,41 @@ function createIndexes() {
     });
 
     console.log('✅ Índices de performance criados');
+}
+
+function populateMaterias() {
+    const materias = [
+        { nome: 'Cálculo I', codigo: 'MAT001', periodo: '1', carga_horaria: 90 },
+        { nome: 'Algoritmos e Estruturas de Dados I', codigo: 'INF001', periodo: '1', carga_horaria: 90 },
+        { nome: 'Arquitetura de Computadores', codigo: 'INF002', periodo: '2', carga_horaria: 60 },
+        { nome: 'Sistemas Operacionais', codigo: 'INF003', periodo: '3', carga_horaria: 90 },
+        { nome: 'Redes de Computadores', codigo: 'INF004', periodo: '4', carga_horaria: 60 },
+        { nome: 'Inteligência Artificial', codigo: 'INF005', periodo: '5', carga_horaria: 60 },
+        { nome: 'Engenharia de Software I', codigo: 'INF006', periodo: '5', carga_horaria: 90 }
+    ];
+
+    const sql = `INSERT INTO materias (nome, codigo, periodo, carga_horaria) VALUES (?, ?, ?, ?)`;
+
+    db.get('SELECT COUNT(*) as count FROM materias', (err, row) => {
+        if (err) {
+            console.error('Erro ao verificar matérias:', err.message);
+            return;
+        }
+
+        if (row.count === 0) {
+            console.log('Populando a tabela de matérias...');
+            materias.forEach(materia => {
+                db.run(sql, [materia.nome, materia.codigo, materia.periodo, materia.carga_horaria], (err) => {
+                    if (err) {
+                        console.error('Erro ao inserir matéria:', err.message);
+                    }
+                });
+            });
+            console.log('✅ Tabela de matérias populada.');
+        } else {
+            console.log('Tabela de matérias já populada.');
+        }
+    });
 }
 
 // Funções auxiliares para trabalhar com Promises

@@ -9,10 +9,10 @@ const cadastrarUsuario = async (req, res) => {
     if (authHeader) {
         return res.status(403).json({ message: 'Você já está logado.' });
     }
+    console.log("chegou ate aqui");
+    const { nomeCompleto, email, senha, ra, periodo, faculdade } = req.body;
 
-    const { nomeCompleto, email, senha, ra, curso, periodo, faculdade } = req.body;
-
-    if (!nomeCompleto || !email || !senha || !ra || !curso || !periodo || !faculdade) {
+    if (!nomeCompleto || !email || !senha || !ra || !periodo || !faculdade) {
         return res.status(400).json({ message: 'Todos os campos são obrigatórios.' });
     }
 
@@ -30,17 +30,16 @@ const cadastrarUsuario = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const senha_hash = await bcrypt.hash(senha, salt);
 
-        const novoUsuario = await Usuario.create({ 
-            nomeCompleto, 
-            email, 
-            senha_hash, 
-            ra, 
-            curso, 
-            periodo, 
-            faculdade 
+        const novoUsuario = await Usuario.create({
+            nome: nomeCompleto,
+            email,
+            senha: senha_hash,
+            ra,
+            periodo,
+            faculdade
         });
 
-        await enviarEmailConfirmacao(novoUsuario.email, novoUsuario.nome_completo);
+        await enviarEmailConfirmacao(novoUsuario.email, novoUsuario.nome);
 
         res.status(201).json({ message: 'Usuário cadastrado com sucesso! Um e-mail de confirmação foi enviado.', usuario: novoUsuario });
 
@@ -62,14 +61,14 @@ const loginUsuario = async (req, res) => {
             return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
 
-        const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
+        const senhaValida = await bcrypt.compare(senha, usuario.senha);
         if (!senhaValida) {
             return res.status(401).json({ message: 'Credenciais inválidas.' });
         }
 
         const payload = {
             id: usuario.id,
-            nome: usuario.nome_completo,
+            nome: usuario.nome,
         };
 
         const secret = process.env.JWT_SECRET || 'secreto_padrao';
