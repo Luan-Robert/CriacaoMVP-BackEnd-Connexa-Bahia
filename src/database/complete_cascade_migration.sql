@@ -1,87 +1,74 @@
--- Schema completo do banco de dados Connexa Bahia-- Script de criação da tabela usuarios para SQLite
+-- MIGRAÇÃO COMPLETA: APLICAÇÃO DE CASCADE EM TODAS AS FOREIGN KEYS
+-- Esta migração atualiza todas as foreign keys para usar CASCADE
+-- Deve ser executada com PRAGMA foreign_keys=OFF para permitir recreação das tabelas
 
--- Versão atualizada com todas as melhorias implementadasCREATE TABLE IF NOT EXISTS usuarios (
+PRAGMA foreign_keys=OFF;
 
+BEGIN TRANSACTION;
+
+-- BACKUP das tabelas existentes
+CREATE TABLE usuarios_backup AS SELECT * FROM usuarios;
+CREATE TABLE grupos_backup AS SELECT * FROM grupos;
+CREATE TABLE mensagens_backup AS SELECT * FROM mensagens;
+CREATE TABLE convites_backup AS SELECT * FROM convites;
+CREATE TABLE grupo_participantes_backup AS SELECT * FROM grupo_participantes;
+CREATE TABLE notificacoes_backup AS SELECT * FROM notificacoes;
+CREATE TABLE materias_backup AS SELECT * FROM materias;
+
+-- DROP das tabelas em ordem reversa de dependência
+DROP TABLE IF EXISTS notificacoes;
+DROP TABLE IF EXISTS mensagens;
+DROP TABLE IF EXISTS convites;
+DROP TABLE IF EXISTS grupo_participantes;
+DROP TABLE IF EXISTS grupos;
+DROP TABLE IF EXISTS materias;
+DROP TABLE IF EXISTS usuarios;
+
+-- RECRIAÇÃO das tabelas com CASCADE foreign keys
+
+-- Tabela usuarios (não tem foreign keys)
+CREATE TABLE usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-
--- ===== TABELA USUARIOS =====    nome_completo TEXT NOT NULL,
-
-CREATE TABLE usuarios (    email TEXT NOT NULL UNIQUE,
-
-    id INTEGER PRIMARY KEY AUTOINCREMENT,    curso TEXT NOT NULL,
-
-    nome VARCHAR(255) NOT NULL,    semestre INTEGER NOT NULL,
-
-    email VARCHAR(255) UNIQUE NOT NULL,    senha_hash TEXT NOT NULL,
-
-    senha VARCHAR(255) NOT NULL,    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP
-
-    ra VARCHAR(20),);
-
+    nome VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    senha VARCHAR(255) NOT NULL,
+    ra VARCHAR(20),
     periodo VARCHAR(10),
+    faculdade VARCHAR(100),
+    foto TEXT,
+    data_criacao TEXT DEFAULT (datetime('now','localtime')),
+    ativo INTEGER DEFAULT 1
+);
 
-    faculdade VARCHAR(100),-- Script de criação da tabela materias
-
-    foto TEXT,CREATE TABLE IF NOT EXISTS materias (
-
-    data_criacao TEXT DEFAULT (datetime('now','localtime')),    id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-    ativo INTEGER DEFAULT 1    nome TEXT NOT NULL UNIQUE
-
-););
-
-
-
--- ===== TABELA MATERIAS =====-- Popula a tabela materias com exemplos
-
-CREATE TABLE materias (INSERT OR IGNORE INTO materias (nome) VALUES
-
-    id INTEGER PRIMARY KEY AUTOINCREMENT,    ('Cálculo I'),
-
-    nome VARCHAR(255) NOT NULL,    ('Algoritmos e Estrutura de Dados'),
-
-    codigo VARCHAR(10),    ('Física I'),
-
-    descricao TEXT,    ('Química Geral'),
-
-    periodo VARCHAR(10),    ('Geometria Analítica');
-
+-- Tabela materias (não tem foreign keys)
+CREATE TABLE materias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome VARCHAR(255) NOT NULL,
+    codigo VARCHAR(10),
+    descricao TEXT,
+    periodo VARCHAR(10),
     carga_horaria INTEGER,
+    professor VARCHAR(255),
+    data_criacao TEXT DEFAULT (datetime('now','localtime'))
+);
 
-    professor VARCHAR(255),-- Script de criação da tabela grupos
-
-    data_criacao TEXT DEFAULT (datetime('now','localtime'))CREATE TABLE IF NOT EXISTS grupos (
-
-);    id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-    nome TEXT NOT NULL,
-
--- ===== TABELA GRUPOS =====    objetivo TEXT,
-
-CREATE TABLE grupos (    local TEXT,
-
-    id INTEGER PRIMARY KEY AUTOINCREMENT,    limite_participantes INTEGER,
-
-    nome VARCHAR(255) NOT NULL,    is_publico BOOLEAN DEFAULT 1,
-
-    materia VARCHAR(100) NOT NULL,    criador_id INTEGER NOT NULL,
-
-    local VARCHAR(100) NOT NULL,    materia_id INTEGER NOT NULL,
-
-    objetivo VARCHAR(100) NOT NULL,    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    vagas_disponiveis INTEGER NOT NULL DEFAULT 0,    FOREIGN KEY (criador_id) REFERENCES usuarios(id),
-
-    total_vagas INTEGER NOT NULL,    FOREIGN KEY (materia_id) REFERENCES materias(id)
-
-    descricao TEXT,);
+-- Tabela grupos COM CASCADE na foreign key criador_id
+CREATE TABLE grupos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome VARCHAR(255) NOT NULL,
+    materia VARCHAR(100) NOT NULL,
+    local VARCHAR(100) NOT NULL,
+    objetivo VARCHAR(100) NOT NULL,
+    vagas_disponiveis INTEGER NOT NULL DEFAULT 0,
+    total_vagas INTEGER NOT NULL,
+    descricao TEXT,
     is_publico INTEGER DEFAULT 1,
     criador_id INTEGER NOT NULL,
     data_criacao TEXT DEFAULT (datetime('now','localtime')),
     FOREIGN KEY (criador_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
--- ===== TABELA GRUPO_PARTICIPANTES =====
+-- Tabela grupo_participantes COM CASCADE nas foreign keys
 CREATE TABLE grupo_participantes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     grupo_id INTEGER NOT NULL,
@@ -93,7 +80,7 @@ CREATE TABLE grupo_participantes (
     UNIQUE(grupo_id, usuario_id)
 );
 
--- ===== TABELA MENSAGENS =====
+-- Tabela mensagens COM CASCADE nas foreign keys
 CREATE TABLE mensagens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     grupo_id INTEGER NOT NULL,
@@ -108,7 +95,7 @@ CREATE TABLE mensagens (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
--- ===== TABELA CONVITES =====
+-- Tabela convites COM CASCADE nas foreign keys
 CREATE TABLE convites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     grupo_id INTEGER NOT NULL,
@@ -124,7 +111,7 @@ CREATE TABLE convites (
     FOREIGN KEY (criador_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
--- ===== TABELA NOTIFICACOES =====
+-- Tabela notificacoes COM CASCADE nas foreign keys
 CREATE TABLE notificacoes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     usuario_id INTEGER NOT NULL,
@@ -138,13 +125,29 @@ CREATE TABLE notificacoes (
     FOREIGN KEY (grupo_id) REFERENCES grupos(id) ON DELETE CASCADE
 );
 
--- ===== ÍNDICES DE PERFORMANCE =====
--- Índices para usuários
+-- RESTAURAÇÃO dos dados a partir dos backups
+INSERT INTO usuarios SELECT * FROM usuarios_backup;
+INSERT INTO materias SELECT * FROM materias_backup;
+INSERT INTO grupos SELECT * FROM grupos_backup;
+INSERT INTO grupo_participantes SELECT * FROM grupo_participantes_backup;
+INSERT INTO mensagens SELECT * FROM mensagens_backup;
+INSERT INTO convites SELECT * FROM convites_backup;
+INSERT INTO notificacoes SELECT * FROM notificacoes_backup;
+
+-- LIMPEZA dos backups
+DROP TABLE usuarios_backup;
+DROP TABLE grupos_backup;
+DROP TABLE mensagens_backup;
+DROP TABLE convites_backup;
+DROP TABLE grupo_participantes_backup;
+DROP TABLE notificacoes_backup;
+DROP TABLE materias_backup;
+
+-- RECRIAÇÃO dos índices de performance
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
 CREATE INDEX IF NOT EXISTS idx_usuarios_ra ON usuarios(ra);
 CREATE INDEX IF NOT EXISTS idx_usuarios_ativo ON usuarios(ativo);
 
--- Índices para grupos
 CREATE INDEX IF NOT EXISTS idx_grupos_materia ON grupos(materia);
 CREATE INDEX IF NOT EXISTS idx_grupos_local ON grupos(local);
 CREATE INDEX IF NOT EXISTS idx_grupos_objetivo ON grupos(objetivo);
@@ -153,19 +156,16 @@ CREATE INDEX IF NOT EXISTS idx_grupos_criador ON grupos(criador_id);
 CREATE INDEX IF NOT EXISTS idx_grupos_vagas ON grupos(vagas_disponiveis);
 CREATE INDEX IF NOT EXISTS idx_grupos_data_criacao ON grupos(data_criacao);
 
--- Índices para grupo_participantes
 CREATE INDEX IF NOT EXISTS idx_grupo_participantes_grupo ON grupo_participantes(grupo_id);
 CREATE INDEX IF NOT EXISTS idx_grupo_participantes_usuario ON grupo_participantes(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_grupo_participantes_papel ON grupo_participantes(papel);
 CREATE INDEX IF NOT EXISTS idx_grupo_participantes_data ON grupo_participantes(data_entrada);
 
--- Índices para mensagens
 CREATE INDEX IF NOT EXISTS idx_mensagens_grupo ON mensagens(grupo_id);
 CREATE INDEX IF NOT EXISTS idx_mensagens_usuario ON mensagens(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_mensagens_data ON mensagens(data_envio);
 CREATE INDEX IF NOT EXISTS idx_mensagens_tipo ON mensagens(tipo);
 
--- Índices para convites
 CREATE INDEX IF NOT EXISTS idx_convites_grupo ON convites(grupo_id);
 CREATE INDEX IF NOT EXISTS idx_convites_criador ON convites(criador_id);
 CREATE INDEX IF NOT EXISTS idx_convites_codigo ON convites(codigo_convite);
@@ -173,14 +173,24 @@ CREATE INDEX IF NOT EXISTS idx_convites_email ON convites(email_convidado);
 CREATE INDEX IF NOT EXISTS idx_convites_tipo ON convites(tipo);
 CREATE INDEX IF NOT EXISTS idx_convites_usado ON convites(usado);
 
--- Índices para notificações
 CREATE INDEX IF NOT EXISTS idx_notificacoes_usuario ON notificacoes(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_notificacoes_grupo ON notificacoes(grupo_id);
 CREATE INDEX IF NOT EXISTS idx_notificacoes_tipo ON notificacoes(tipo);
 CREATE INDEX IF NOT EXISTS idx_notificacoes_lida ON notificacoes(lida);
 CREATE INDEX IF NOT EXISTS idx_notificacoes_data ON notificacoes(data_criacao);
 
--- Índices para materias
 CREATE INDEX IF NOT EXISTS idx_materias_codigo ON materias(codigo);
 CREATE INDEX IF NOT EXISTS idx_materias_nome ON materias(nome);
 CREATE INDEX IF NOT EXISTS idx_materias_periodo ON materias(periodo);
+
+COMMIT;
+
+PRAGMA foreign_keys=ON;
+
+-- VERIFICAÇÃO final das foreign keys
+SELECT 'VERIFICAÇÃO DAS FOREIGN KEYS:' as status;
+PRAGMA foreign_key_list(grupos);
+PRAGMA foreign_key_list(grupo_participantes);
+PRAGMA foreign_key_list(mensagens);
+PRAGMA foreign_key_list(convites);
+PRAGMA foreign_key_list(notificacoes);
