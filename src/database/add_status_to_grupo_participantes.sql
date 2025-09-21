@@ -1,0 +1,1 @@
+ALTER TABLE grupo_participantes ADD COLUMN status TEXT NOT NULL DEFAULT 'pendente';

@@ -165,6 +165,74 @@ const excluirGrupo = async (req, res) => {
     }
 };
 
+const getGrupoById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const grupo = await Grupo.findById(id);
+        if (!grupo) {
+            return res.status(404).json({ message: 'Grupo não encontrado.' });
+        }
+        res.status(200).json(grupo);
+    } catch (error) {
+        console.error('Erro ao buscar grupo por ID:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+};
+
+const atualizarConfiguracoes = async (req, res) => {
+    const { id } = req.params;
+    const { nome, objetivo, local } = req.body;
+
+    try {
+        await Grupo.update(id, { nome, objetivo, local });
+        res.status(200).json({ message: 'Configurações do grupo atualizadas com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao atualizar configurações do grupo:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+};
+
+const getSolicitacoes = async (req, res) => {
+    const { grupoId } = req.params;
+
+    try {
+        const solicitacoes = await Grupo.getPendingRequests(grupoId);
+        res.status(200).json(solicitacoes);
+    } catch (error) {
+        console.error('Erro ao buscar solicitações:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+};
+
+const getMembros = async (req, res) => {
+    const { grupoId } = req.params;
+
+    try {
+        const membros = await Grupo.getMembers(grupoId);
+        res.status(200).json(membros);
+    } catch (error) {
+        console.error('Erro ao buscar membros:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+};
+
+const criarMensagem = async (req, res) => {
+    const { grupoId } = req.params;
+    const { texto } = req.body;
+    const usuarioId = req.usuario.id;
+
+    try {
+        const novaMensagem = await Grupo.createMensagem(grupoId, usuarioId, texto);
+        // Emitir a nova mensagem para o grupo via WebSocket
+        req.app.get('io').to(grupoId).emit('nova_mensagem', novaMensagem);
+        res.status(201).json(novaMensagem);
+    } catch (error) {
+        console.error('Erro ao criar mensagem:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+};
+
 module.exports = {
     criarGrupo,
     listarGrupos,
@@ -175,4 +243,9 @@ module.exports = {
     buscaAvancada,
     getMensagens,
     excluirGrupo,
+    getGrupoById,
+    atualizarConfiguracoes,
+    getSolicitacoes,
+    getMembros,
+    criarMensagem,
 };

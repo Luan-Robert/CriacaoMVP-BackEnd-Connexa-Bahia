@@ -26,7 +26,8 @@ const Grupo = require('../models/grupoModel');
 
 const isGroupAdmin = async (req, res, next) => {
     try {
-const usuarioId = req.usuario.id;
+        const grupoId = req.params.id || req.params.grupoId;
+        const usuarioId = req.usuario.id;
 
         const isAdmin = await Grupo.isUserAdmin(grupoId, usuarioId);
 

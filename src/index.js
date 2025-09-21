@@ -16,6 +16,7 @@ const initWebSocket = require('./websocket');
 const app = express();
 const server = http.createServer(app);
 const io = initWebSocket(server);
+app.set('io', io);
 
 const PORT = process.env.PORT || 3000;
 

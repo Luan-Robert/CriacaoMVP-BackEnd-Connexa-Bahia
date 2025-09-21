@@ -124,6 +124,32 @@ const isUserMember = async (grupoId, usuarioId) => {
     return !!row;
 };
 
+const update = (id, grupoData) => {
+    const { nome, objetivo, local } = grupoData;
+    const sql = 'UPDATE grupos SET nome = ?, objetivo = ?, local = ? WHERE id = ?';
+    return dbRun(sql, [nome, objetivo, local, id]);
+};
+
+const getPendingRequests = (grupoId) => {
+    const sql = `
+        SELECT u.id, u.nome, u.email
+        FROM usuarios u
+        JOIN grupo_participantes gp ON u.id = gp.usuario_id
+        WHERE gp.grupo_id = ? AND gp.status = 'pendente'
+    `;
+    return dbAll(sql, [grupoId]);
+};
+
+const getMembers = (grupoId) => {
+    const sql = `
+        SELECT u.id, u.nome, u.email
+        FROM usuarios u
+        JOIN grupo_participantes gp ON u.id = gp.usuario_id
+        WHERE gp.grupo_id = ? AND gp.status = 'membro'
+    `;
+    return dbAll(sql, [grupoId]);
+};
+
 module.exports = {
     create,
     findById,
@@ -135,4 +161,7 @@ module.exports = {
     createMensagem,
     getMensagensPorGrupo,
     isUserMember,
+    update,
+    getPendingRequests,
+    getMembers,
 };
