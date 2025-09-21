@@ -26,4 +26,7 @@ router.delete('/:grupoId/mensagens/:mensagemId', protegerRota, isGroupAdmin, gru
 // Rota para buscar histórico de mensagens
 router.get('/:grupoId/mensagens', protegerRota, gruposController.getMensagens);
 
+// Rota para excluir um grupo
+router.delete('/:groupId', protegerRota, isGroupAdmin, gruposController.excluirGrupo);
+
 module.exports = router;

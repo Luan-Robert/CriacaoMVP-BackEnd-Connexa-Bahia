@@ -144,6 +144,27 @@ const getMensagens = async (req, res) => {
     }
 };
 
+const { dbRun } = require('../db');
+
+const excluirGrupo = async (req, res) => {
+    const { groupId } = req.params;
+
+    try {
+        // O ON DELETE CASCADE cuidará das tabelas dependentes.
+        // Apenas precisamos deletar o grupo principal.
+        const result = await Grupo.deleteById(groupId);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Grupo não encontrado.' });
+        }
+
+        res.status(204).send();
+    } catch (error) {
+        console.error('Erro ao excluir grupo:', error);
+        res.status(500).json({ error: 'Erro interno do servidor ao excluir o grupo.' });
+    }
+};
+
 module.exports = {
     criarGrupo,
     listarGrupos,
@@ -153,4 +174,5 @@ module.exports = {
     excluirMensagem,
     buscaAvancada,
     getMensagens,
+    excluirGrupo,
 };

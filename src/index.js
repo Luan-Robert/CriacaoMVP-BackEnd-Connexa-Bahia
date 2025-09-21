@@ -6,6 +6,7 @@ const cors = require('cors');
 const usuariosRoutes = require('./routes/usuariosRoutes');
 const materiasRoutes = require('./routes/materiasRoutes');
 const gruposRoutes = require('./routes/gruposRoutes');
+const convitesRoutes = require('./routes/convitesRoutes');
 
 const anexosRoutes = require('./routes/anexosRoutes');
 
@@ -26,6 +27,7 @@ app.use(express.json());
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/materias', materiasRoutes);
 app.use('/api/grupos', gruposRoutes);
+app.use('/api', convitesRoutes);
 app.use('/api/grupos/:groupId/anexos', anexosRoutes);
 
 // Servir arquivos estáticos
