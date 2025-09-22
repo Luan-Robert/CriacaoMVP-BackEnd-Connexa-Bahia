@@ -108,7 +108,7 @@ const buscaAvancada = (params) => {
 };
 
 const createMensagem = async (grupoId, usuarioId, texto) => {
-    const sql = 'INSERT INTO mensagens (grupo_id, usuario_id, texto) VALUES (?, ?, ?)';
+    const sql = 'INSERT INTO mensagens (grupo_id, usuario_id, conteudo) VALUES (?, ?, ?)';
     const result = await dbRun(sql, [grupoId, usuarioId, texto]);
     return dbGet('SELECT * FROM mensagens WHERE id = ?', [result.lastID]);
 };
