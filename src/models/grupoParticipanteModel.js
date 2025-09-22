@@ -1,40 +1,12 @@
-const db = require('../db');
-
-// Helper para transformar callbacks do SQLite em Promises
-const dbGet = (query, params) => {
-    return new Promise((resolve, reject) => {
-        db.get(query, params, (err, row) => {
-            if (err) reject(err);
-            resolve(row);
-        });
-    });
-};
-
-const dbAll = (query, params) => {
-    return new Promise((resolve, reject) => {
-        db.all(query, params, (err, rows) => {
-            if (err) reject(err);
-            resolve(rows);
-        });
-    });
-};
-
-const dbRun = (query, params) => {
-    return new Promise((resolve, reject) => {
-        db.run(query, params, function(err) {
-            if (err) reject(err);
-            resolve(this); // 'this' contém lastID e changes
-        });
-    });
-};
+const { dbGet, dbAll, dbRun } = require('../db');
 
 // Adicionar participante a um grupo
-const addParticipant = async (grupoId, usuarioId, isAdmin = 0) => {
+const addParticipant = async (grupoId, usuarioId, isAdmin = 0, status = 'membro') => {
     const result = await dbRun(
-        'INSERT INTO grupo_participantes (grupo_id, usuario_id, is_admin) VALUES (?, ?, ?)',
-        [grupoId, usuarioId, isAdmin]
+        'INSERT INTO grupo_participantes (grupo_id, usuario_id, is_admin, status) VALUES (?, ?, ?, ?)',
+        [grupoId, usuarioId, isAdmin, status]
     );
-    return { id: result.lastID, grupoId, usuarioId, isAdmin };
+    return { id: result.lastID, grupoId, usuarioId, isAdmin, status };
 };
 
 // Remover participante de um grupo
@@ -78,12 +50,13 @@ const getGroupsByUser = (usuarioId) => {
             g.descricao,
             g.objetivo,
             g.local,
-            g.materia,
-            g.vagas_disponiveis,
-            g.total_vagas,
+            m.nome as materia,
+            (g.limite_participantes - (SELECT COUNT(*) FROM grupo_participantes mg WHERE mg.grupo_id = g.id)) as vagas_disponiveis, 
+            g.limite_participantes as total_vagas,
             g.is_publico
         FROM grupo_participantes gp
         JOIN grupos g ON gp.grupo_id = g.id
+        JOIN materias m ON g.materia_id = m.id
         WHERE gp.usuario_id = ?
         ORDER BY gp.data_entrada DESC
     `, [usuarioId]);

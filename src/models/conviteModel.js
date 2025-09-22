@@ -1,33 +1,5 @@
-const db = require('../db');
+const { dbGet, dbAll, dbRun } = require('../db');
 const crypto = require('crypto');
-
-// Helper para transformar callbacks do SQLite em Promises
-const dbGet = (query, params) => {
-    return new Promise((resolve, reject) => {
-        db.get(query, params, (err, row) => {
-            if (err) reject(err);
-            resolve(row);
-        });
-    });
-};
-
-const dbAll = (query, params) => {
-    return new Promise((resolve, reject) => {
-        db.all(query, params, (err, rows) => {
-            if (err) reject(err);
-            resolve(rows);
-        });
-    });
-};
-
-const dbRun = (query, params) => {
-    return new Promise((resolve, reject) => {
-        db.run(query, params, function(err) {
-            if (err) reject(err);
-            resolve(this); // 'this' contém lastID e changes
-        });
-    });
-};
 
 // Gerar token único para convites por link
 const generateToken = () => {
@@ -35,11 +7,11 @@ const generateToken = () => {
 };
 
 // Criar convite direto (usuário para usuário)
-const createConviteDireto = async (convidadorId, convidadoId, grupoId) => {
+const createConviteDireto = async (criadorId, convidadoId, grupoId) => {
     // Verificar se já existe convite pendente entre os mesmos usuários para o mesmo grupo
     const conviteExistente = await dbGet(
-        'SELECT id FROM convites WHERE grupo_id = ? AND convidador_id = ? AND convidado_id = ? AND status = "PENDENTE"',
-        [grupoId, convidadorId, convidadoId]
+        'SELECT id FROM convites WHERE grupo_id = ? AND criador_id = ? AND convidado_id = ? AND status = "PENDENTE"',
+        [grupoId, criadorId, convidadoId]
     );
     
     if (conviteExistente) {
@@ -47,20 +19,20 @@ const createConviteDireto = async (convidadorId, convidadoId, grupoId) => {
     }
     
     const result = await dbRun(
-        'INSERT INTO convites (tipo, grupo_id, convidador_id, convidado_id, status) VALUES (?, ?, ?, ?, ?)',
-        ['DIRETO', grupoId, convidadorId, convidadoId, 'PENDENTE']
+        'INSERT INTO convites (tipo, grupo_id, criador_id, convidado_id, status) VALUES (?, ?, ?, ?, ?)',
+        ['DIRETO', grupoId, criadorId, convidadoId, 'PENDENTE']
     );
     
     return findById(result.lastID);
 };
 
 // Criar convite por link
-const createConviteLink = async (convidadorId, grupoId, dataExpiracao = null) => {
+const createConviteLink = async (criadorId, grupoId, dataExpiracao = null) => {
     const token = generateToken();
     
     const result = await dbRun(
-        'INSERT INTO convites (tipo, token, grupo_id, convidador_id, data_expiracao, status) VALUES (?, ?, ?, ?, ?, ?)',
-        ['LINK', token, grupoId, convidadorId, dataExpiracao, 'PENDENTE']
+        'INSERT INTO convites (tipo, token, grupo_id, criador_id, data_expiracao, status) VALUES (?, ?, ?, ?, ?, ?)',
+        ['LINK', token, grupoId, criadorId, dataExpiracao, 'PENDENTE']
     );
     
     return findById(result.lastID);
@@ -72,11 +44,11 @@ const findById = (id) => {
         SELECT 
             c.*,
             g.nome as grupo_nome,
-            convidador.nome_completo as convidador_nome,
-            convidado.nome_completo as convidado_nome
+            criador.nome as criador_nome,
+            convidado.nome as convidado_nome
         FROM convites c
         JOIN grupos g ON c.grupo_id = g.id
-        JOIN usuarios convidador ON c.convidador_id = convidador.id
+        JOIN usuarios criador ON c.criador_id = criador.id
         LEFT JOIN usuarios convidado ON c.convidado_id = convidado.id
         WHERE c.id = ?
     `, [id]);
@@ -91,10 +63,10 @@ const findByToken = (token) => {
             g.descricao as grupo_descricao,
             g.materia as grupo_materia,
             g.vagas_disponiveis,
-            convidador.nome_completo as convidador_nome
+            criador.nome as criador_nome
         FROM convites c
         JOIN grupos g ON c.grupo_id = g.id
-        JOIN usuarios convidador ON c.convidador_id = convidador.id
+        JOIN usuarios criador ON c.criador_id = criador.id
         WHERE c.token = ? AND c.status = 'PENDENTE'
     `, [token]);
 };
@@ -107,11 +79,11 @@ const findConvitesRecebidos = (usuarioId, status = null) => {
             g.nome as grupo_nome,
             g.descricao as grupo_descricao,
             g.materia as grupo_materia,
-            convidador.nome_completo as convidador_nome,
-            convidador.email as convidador_email
+            criador.nome as criador_nome,
+            criador.email as criador_email
         FROM convites c
         JOIN grupos g ON c.grupo_id = g.id
-        JOIN usuarios convidador ON c.convidador_id = convidador.id
+        JOIN usuarios criador ON c.criador_id = criador.id
         WHERE c.convidado_id = ? AND c.tipo = 'DIRETO'
     `;
     
@@ -134,12 +106,12 @@ const findConvitesEnviados = (usuarioId, status = null) => {
             c.*,
             g.nome as grupo_nome,
             g.descricao as grupo_descricao,
-            convidado.nome_completo as convidado_nome,
+            convidado.nome as convidado_nome,
             convidado.email as convidado_email
         FROM convites c
         JOIN grupos g ON c.grupo_id = g.id
         LEFT JOIN usuarios convidado ON c.convidado_id = convidado.id
-        WHERE c.convidador_id = ?
+        WHERE c.criador_id = ?
     `;
     
     let params = [usuarioId];
@@ -159,10 +131,10 @@ const findConvitesByGrupo = (grupoId, tipo = null, status = null) => {
     let query = `
         SELECT 
             c.*,
-            convidador.nome_completo as convidador_nome,
-            convidado.nome_completo as convidado_nome
+            criador.nome as criador_nome,
+            convidado.nome as convidado_nome
         FROM convites c
-        JOIN usuarios convidador ON c.convidador_id = convidador.id
+        JOIN usuarios criador ON c.criador_id = criador.id
         LEFT JOIN usuarios convidado ON c.convidado_id = convidado.id
         WHERE c.grupo_id = ?
     `;
@@ -249,7 +221,7 @@ const cancelarConvite = async (conviteId, usuarioId) => {
         throw new Error('Convite não encontrado');
     }
     
-    if (convite.convidador_id !== usuarioId) {
+    if (convite.criador_id !== usuarioId) {
         throw new Error('Apenas quem enviou o convite pode cancelá-lo');
     }
     
@@ -289,7 +261,7 @@ const hasConvitePendente = async (usuarioId, grupoId) => {
 // Desativar link de convite (marcar como expirado)
 const desativarLink = async (token, usuarioId) => {
     const convite = await dbGet(
-        'SELECT id, convidador_id FROM convites WHERE token = ?',
+        'SELECT id, criador_id FROM convites WHERE token = ?',
         [token]
     );
     
@@ -297,7 +269,7 @@ const desativarLink = async (token, usuarioId) => {
         throw new Error('Link de convite não encontrado');
     }
     
-    if (convite.convidador_id !== usuarioId) {
+    if (convite.criador_id !== usuarioId) {
         throw new Error('Apenas quem criou o link pode desativá-lo');
     }
     

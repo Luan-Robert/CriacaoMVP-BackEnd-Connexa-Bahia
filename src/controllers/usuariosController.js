@@ -2,6 +2,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/usuarioModel');
+const GrupoParticipante = require('../models/grupoParticipanteModel');
 const { enviarEmailConfirmacao } = require('../email');
 
 const cadastrarUsuario = async (req, res) => {
@@ -95,8 +96,34 @@ const getPerfil = async (req, res) => {
     }
 };
 
+const findUserByEmail = async (req, res) => {
+    try {
+        const { email } = req.params;
+        const usuario = await Usuario.findPublicByEmail(email);
+        if (!usuario) {
+            return res.status(404).json({ message: 'Usuário não encontrado.' });
+        }
+        res.status(200).json({ id: usuario.id });
+    } catch (error) {
+        console.error('Erro ao buscar usuário por email:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+};
+
+const getGruposDoUsuario = async (req, res) => {
+    try {
+        const grupos = await GrupoParticipante.getGroupsByUser(req.usuario.id);
+        res.status(200).json(grupos);
+    } catch (error) {
+        console.error('Erro ao buscar grupos do usuário:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+};
+
 module.exports = {
     cadastrarUsuario,
     loginUsuario,
     getPerfil,
+    findUserByEmail,
+    getGruposDoUsuario,
 };

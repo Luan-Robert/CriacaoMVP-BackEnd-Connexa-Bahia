@@ -4,6 +4,10 @@ const findByEmail = (email) => {
     return dbGet('SELECT * FROM usuarios WHERE email = ?', [email]);
 };
 
+const findPublicByEmail = (email) => {
+    return dbGet('SELECT id, nome, email FROM usuarios WHERE email = ?', [email]);
+};
+
 const findById = (id) => {
     return dbGet('SELECT id, nome, email, ra, periodo, faculdade FROM usuarios WHERE id = ?', [id]);
 };
@@ -19,6 +23,7 @@ const create = async (usuario) => {
 
 module.exports = {
     findByEmail,
+    findPublicByEmail,
     findById,
     create,
 };

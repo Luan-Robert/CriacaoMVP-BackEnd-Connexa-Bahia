@@ -1,6 +1,7 @@
 const Grupo = require('../models/grupoModel');
 const Notificacao = require('../models/notificacaoModel');
 const Materia = require('../models/materiaModel');
+const GrupoParticipante = require('../models/grupoParticipanteModel');
 
 const criarGrupo = async (req, res) => {
     const { nome, materiaId, objetivo, local, limiteParticipantes, isPublico } = req.body;
@@ -24,6 +25,9 @@ const criarGrupo = async (req, res) => {
             criadorId,
         });
 
+        // Adiciona o criador como administrador do grupo
+        await GrupoParticipante.addParticipant(novoGrupo.id, criadorId, 1, 'membro'); // 1 para admin, status de membro
+
         // 3. Criação da notificação
         await Notificacao.create({
             usuarioId: criadorId,
@@ -38,6 +42,34 @@ const criarGrupo = async (req, res) => {
     } catch (error) {
         console.error('Erro ao criar grupo:', error);
         res.status(500).json({ message: 'Erro interno do servidor ao criar o grupo.' });
+    }
+};
+
+const solicitarEntrada = async (req, res) => {
+    const { groupId } = req.params;
+    const usuarioId = req.usuario.id;
+
+    try {
+        const grupo = await Grupo.findById(groupId);
+        if (!grupo) {
+            return res.status(404).json({ error: 'Grupo não encontrado.' });
+        }
+
+        const numeroMembros = await Grupo.getNumeroMembros(groupId);
+        if (numeroMembros >= grupo.limite_participantes) {
+            return res.status(409).json({ error: 'O grupo já atingiu o limite de participantes.' });
+        }
+
+        if (grupo.is_publico) {
+            await GrupoParticipante.addParticipant(groupId, usuarioId, 0, 'membro');
+            res.status(200).json({ message: 'Você entrou no grupo com sucesso.', status: 'membro' });
+        } else {
+            await GrupoParticipante.addParticipant(groupId, usuarioId, 0, 'pendente');
+            res.status(200).json({ message: 'Solicitação para entrar no grupo enviada com sucesso.', status: 'pendente' });
+        }
+    } catch (error) {
+        console.error('Erro ao solicitar entrada no grupo:', error);
+        res.status(500).json({ message: 'Erro interno do servidor ao solicitar entrada no grupo.' });
     }
 };
 
@@ -235,6 +267,7 @@ const criarMensagem = async (req, res) => {
 
 module.exports = {
     criarGrupo,
+    solicitarEntrada,
     listarGrupos,
     aprovarSolicitacao,
     rejeitarSolicitacao,

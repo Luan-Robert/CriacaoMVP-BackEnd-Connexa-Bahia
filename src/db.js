@@ -74,7 +74,8 @@ function createTables() {
             grupo_id INTEGER NOT NULL,
             usuario_id INTEGER NOT NULL,
             data_entrada TEXT DEFAULT (datetime('now','localtime')),
-            papel VARCHAR(20) DEFAULT 'membro',
+            status VARCHAR(20) DEFAULT 'membro',
+            is_admin INTEGER DEFAULT 0,
             FOREIGN KEY (grupo_id) REFERENCES grupos(id) ON DELETE CASCADE,
             FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
             UNIQUE(grupo_id, usuario_id)
@@ -100,15 +101,19 @@ function createTables() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             grupo_id INTEGER NOT NULL,
             criador_id INTEGER NOT NULL,
+            convidado_id INTEGER,
+            token TEXT UNIQUE,
             codigo_convite VARCHAR(50) UNIQUE,
             email_convidado VARCHAR(255),
             tipo VARCHAR(20) DEFAULT 'direto',
+            status VARCHAR(20) DEFAULT 'pendente',
             usado INTEGER DEFAULT 0,
             data_criacao TEXT DEFAULT (datetime('now','localtime')),
             data_expiracao TEXT,
             data_uso TEXT,
             FOREIGN KEY (grupo_id) REFERENCES grupos(id) ON DELETE CASCADE,
-            FOREIGN KEY (criador_id) REFERENCES usuarios(id) ON DELETE CASCADE
+            FOREIGN KEY (criador_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+            FOREIGN KEY (convidado_id) REFERENCES usuarios(id) ON DELETE CASCADE
         )`);
 
         // Cria a tabela de notificações
@@ -152,7 +157,7 @@ function createIndexes() {
         // Índices para grupo_participantes
         'CREATE INDEX IF NOT EXISTS idx_grupo_participantes_grupo ON grupo_participantes(grupo_id)',
         'CREATE INDEX IF NOT EXISTS idx_grupo_participantes_usuario ON grupo_participantes(usuario_id)',
-        'CREATE INDEX IF NOT EXISTS idx_grupo_participantes_papel ON grupo_participantes(papel)',
+        'CREATE INDEX IF NOT EXISTS idx_grupo_participantes_status ON grupo_participantes(status)',
         'CREATE INDEX IF NOT EXISTS idx_grupo_participantes_data ON grupo_participantes(data_entrada)',
         
         // Índices para mensagens

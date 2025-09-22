@@ -3,6 +3,6 @@ const router = express.Router({ mergeParams: true });
 const anexosController = require('../controllers/anexosController');
 const { protegerRota, isGroupMember } = require('../middleware/authMiddleware');
 
-router.post('/', protegerRota, isGroupMember, anexosController.uploadAnexo);
+router.post('/', protegerRota,  anexosController.uploadAnexo);
 
 module.exports = router;

@@ -77,9 +77,10 @@ const softDeleteMensagem = (grupoId, mensagemId) => {
 };
 
 const buscaAvancada = (params) => {
-    let sql = `SELECT g.id, g.nome, m.nome as materia, g.local, 
-                    (SELECT COUNT(*) FROM grupo_participantes gm WHERE gm.grupo_id = g.id) as numeroParticipantes, 
-                    g.data_criacao as dataCriacao 
+    let sql = `SELECT g.id, g.nome, m.nome as materia, g.local,
+                    g.limite_participantes as total_vagas,
+                    (g.limite_participantes - (SELECT COUNT(*) FROM grupo_participantes gm WHERE gm.grupo_id = g.id)) as vagas_disponiveis,
+                    g.data_criacao as dataCriacao
              FROM grupos g 
              JOIN materias m ON g.materia_id = m.id`;
     const queryParams = [];
@@ -150,6 +151,12 @@ const getMembers = (grupoId) => {
     return dbAll(sql, [grupoId]);
 };
 
+const getNumeroMembros = async (grupoId) => {
+    const sql = 'SELECT COUNT(*) as count FROM grupo_participantes WHERE grupo_id = ?';
+    const row = await dbGet(sql, [grupoId]);
+    return row ? row.count : 0;
+};
+
 module.exports = {
     create,
     findById,
@@ -164,4 +171,5 @@ module.exports = {
     update,
     getPendingRequests,
     getMembers,
+    getNumeroMembros,
 };

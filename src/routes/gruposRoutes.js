@@ -1,37 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const gruposController = require('../controllers/gruposController');
-const { protegerRota, isGroupAdmin, isGroupMember } = require('../middleware/authMiddleware');
+const { protegerRota, isGroupAdmin } = require('../middleware/authMiddleware');
 
-router.get('/busca', protegerRota, gruposController.buscaAvancada);
-
-// Rota para criar um novo grupo (protegida)
+// Rotas de Grupos
 router.post('/', protegerRota, gruposController.criarGrupo);
-router.get('/', protegerRota, gruposController.listarGrupos);
-
-router.get('/:id', protegerRota, gruposController.getGrupoById);
-
-// Exemplo de rota protegida pelo middleware isGroupAdmin
+router.get('/', gruposController.listarGrupos);
+router.get('/busca', gruposController.buscaAvancada);
+router.get('/:id', gruposController.getGrupoById);
 router.put('/:id/configuracoes', protegerRota, isGroupAdmin, gruposController.atualizarConfiguracoes);
+router.delete('/:id', protegerRota, isGroupAdmin, gruposController.excluirGrupo);
 
-router.get('/:grupoId/solicitacoes', protegerRota, isGroupAdmin, gruposController.getSolicitacoes);
-
+// Rotas de Membros e Solicitações
+router.post('/:groupId/solicitar-entrada', protegerRota, gruposController.solicitarEntrada);
 router.get('/:grupoId/membros', protegerRota, isGroupAdmin, gruposController.getMembros);
-
-// Rotas para gerenciamento de membros
+router.delete('/:grupoId/membros/:usuarioId', protegerRota, isGroupAdmin, gruposController.removerMembro);
+router.get('/:grupoId/solicitacoes', protegerRota, isGroupAdmin, gruposController.getSolicitacoes);
 router.put('/:grupoId/solicitacoes/:usuarioId/aprovar', protegerRota, isGroupAdmin, gruposController.aprovarSolicitacao);
 router.put('/:grupoId/solicitacoes/:usuarioId/rejeitar', protegerRota, isGroupAdmin, gruposController.rejeitarSolicitacao);
-router.delete('/:grupoId/membros/:usuarioId', protegerRota, isGroupAdmin, gruposController.removerMembro);
 
-// Rota para excluir mensagem (soft delete)
-router.delete('/:grupoId/mensagens/:mensagemId', protegerRota, isGroupAdmin, gruposController.excluirMensagem);
-
-router.post('/:grupoId/mensagens', protegerRota, isGroupMember, gruposController.criarMensagem);
-
-// Rota para buscar histórico de mensagens
+// Rotas de Mensagens
+router.post('/:grupoId/mensagens', protegerRota, gruposController.criarMensagem);
 router.get('/:grupoId/mensagens', protegerRota, gruposController.getMensagens);
-
-// Rota para excluir um grupo
-router.delete('/:groupId', protegerRota, isGroupAdmin, gruposController.excluirGrupo);
+router.delete('/:grupoId/mensagens/:mensagemId', protegerRota, isGroupAdmin, gruposController.excluirMensagem);
 
 module.exports = router;
