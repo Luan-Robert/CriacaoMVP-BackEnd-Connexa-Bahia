@@ -81,6 +81,20 @@ function createTables() {
             UNIQUE(grupo_id, usuario_id)
         )`);
 
+        // Garante que a coluna 'status' exista para compatibilidade com bancos de dados antigos
+        db.run(`ALTER TABLE grupo_participantes ADD COLUMN status VARCHAR(20) DEFAULT 'membro'`, (err) => {
+            if (err && !err.message.includes('duplicate column name')) {
+                console.error("Erro ao migrar a tabela 'grupo_participantes':", err.message);
+            }
+        });
+
+        // Garante que a coluna 'is_admin' exista para compatibilidade com bancos de dados antigos
+        db.run(`ALTER TABLE grupo_participantes ADD COLUMN is_admin INTEGER DEFAULT 0`, (err) => {
+            if (err && !err.message.includes('duplicate column name')) {
+                console.error("Erro ao migrar a tabela 'grupo_participantes' (is_admin):", err.message);
+            }
+        });
+
         // Cria a tabela de mensagens
         db.run(`CREATE TABLE IF NOT EXISTS mensagens (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -115,6 +129,20 @@ function createTables() {
             FOREIGN KEY (criador_id) REFERENCES usuarios(id) ON DELETE CASCADE,
             FOREIGN KEY (convidado_id) REFERENCES usuarios(id) ON DELETE CASCADE
         )`);
+
+        // Garante que a coluna 'convidado_id' exista para compatibilidade
+        db.run(`ALTER TABLE convites ADD COLUMN convidado_id INTEGER`, (err) => {
+            if (err && !err.message.includes('duplicate column name')) {
+                console.error("Erro ao migrar a tabela 'convites' (convidado_id):", err.message);
+            }
+        });
+
+        // Garante que a coluna 'status' exista para compatibilidade
+        db.run(`ALTER TABLE convites ADD COLUMN status VARCHAR(20) DEFAULT 'pendente'`, (err) => {
+            if (err && !err.message.includes('duplicate column name')) {
+                console.error("Erro ao migrar a tabela 'convites' (status):", err.message);
+            }
+        });
 
         // Cria a tabela de notificações
         db.run(`CREATE TABLE IF NOT EXISTS notificacoes (

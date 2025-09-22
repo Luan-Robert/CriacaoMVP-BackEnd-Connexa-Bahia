@@ -1,13 +1,21 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+
+// Cria o diretório de uploads se ele não existir
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log(`Diretório de uploads criado em: ${uploadsDir}`);
+}
 
 // Importação das rotas
 const usuariosRoutes = require('./routes/usuariosRoutes');
 const materiasRoutes = require('./routes/materiasRoutes');
 const gruposRoutes = require('./routes/gruposRoutes');
 const convitesRoutes = require('./routes/convitesRoutes');
-
 const anexosRoutes = require('./routes/anexosRoutes');
 
 const http = require('http');

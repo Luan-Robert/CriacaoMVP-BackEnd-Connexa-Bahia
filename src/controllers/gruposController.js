@@ -179,12 +179,12 @@ const getMensagens = async (req, res) => {
 const { dbRun } = require('../db');
 
 const excluirGrupo = async (req, res) => {
-    const { groupId } = req.params;
+    const { id } = req.params; // Corrigido de groupId para id
 
     try {
         // O ON DELETE CASCADE cuidará das tabelas dependentes.
         // Apenas precisamos deletar o grupo principal.
-        const result = await Grupo.deleteById(groupId);
+        const result = await Grupo.removeById(id);
 
         if (result.changes === 0) {
             return res.status(404).json({ error: 'Grupo não encontrado.' });
@@ -251,13 +251,24 @@ const getMembros = async (req, res) => {
 
 const criarMensagem = async (req, res) => {
     const { grupoId } = req.params;
-    const { texto } = req.body;
+    const { texto, anexo_url, tipo } = req.body;
     const usuarioId = req.usuario.id;
 
+    // Garante que haja conteúdo, seja texto ou anexo
+    if (!texto && !anexo_url) {
+        return res.status(400).json({ message: 'A mensagem precisa ter um conteúdo.' });
+    }
+
     try {
-        const novaMensagem = await Grupo.createMensagem(grupoId, usuarioId, texto);
+        // Se for um anexo sem texto, usamos um placeholder para o conteúdo
+        const conteudo = texto || 'Anexo';
+        const tipoMensagem = tipo || 'texto';
+
+        const novaMensagem = await Grupo.createMensagem(grupoId, usuarioId, conteudo, tipoMensagem, anexo_url);
+        
         // Emitir a nova mensagem para o grupo via WebSocket
         req.app.get('io').to(grupoId).emit('nova_mensagem', novaMensagem);
+        
         res.status(201).json(novaMensagem);
     } catch (error) {
         console.error('Erro ao criar mensagem:', error);

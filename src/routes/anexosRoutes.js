@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const anexosController = require('../controllers/anexosController');
+const { upload, salvarAnexo } = require('../controllers/anexosController');
 const { protegerRota, isGroupMember } = require('../middleware/authMiddleware');
 
-router.post('/', protegerRota,  anexosController.uploadAnexo);
+// A rota agora usa o middleware de upload do multer antes do controlador final
+router.post('/', protegerRota, upload, salvarAnexo);
 
 module.exports = router;

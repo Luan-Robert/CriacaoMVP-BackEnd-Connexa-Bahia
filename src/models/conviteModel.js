@@ -61,11 +61,12 @@ const findByToken = (token) => {
             c.*,
             g.nome as grupo_nome,
             g.descricao as grupo_descricao,
-            g.materia as grupo_materia,
-            g.vagas_disponiveis,
+            m.nome as grupo_materia,
+            (g.limite_participantes - (SELECT COUNT(*) FROM grupo_participantes gp WHERE gp.grupo_id = g.id)) as vagas_disponiveis,
             criador.nome as criador_nome
         FROM convites c
         JOIN grupos g ON c.grupo_id = g.id
+        JOIN materias m ON g.materia_id = m.id
         JOIN usuarios criador ON c.criador_id = criador.id
         WHERE c.token = ? AND c.status = 'PENDENTE'
     `, [token]);
@@ -78,11 +79,12 @@ const findConvitesRecebidos = (usuarioId, status = null) => {
             c.*,
             g.nome as grupo_nome,
             g.descricao as grupo_descricao,
-            g.materia as grupo_materia,
+            m.nome as grupo_materia,
             criador.nome as criador_nome,
             criador.email as criador_email
         FROM convites c
         JOIN grupos g ON c.grupo_id = g.id
+        JOIN materias m ON g.materia_id = m.id
         JOIN usuarios criador ON c.criador_id = criador.id
         WHERE c.convidado_id = ? AND c.tipo = 'DIRETO'
     `;

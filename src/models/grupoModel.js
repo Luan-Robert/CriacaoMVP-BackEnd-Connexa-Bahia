@@ -108,9 +108,9 @@ const buscaAvancada = (params) => {
     return dbAll(sql, queryParams);
 };
 
-const createMensagem = async (grupoId, usuarioId, texto) => {
-    const sql = 'INSERT INTO mensagens (grupo_id, usuario_id, conteudo) VALUES (?, ?, ?)';
-    const result = await dbRun(sql, [grupoId, usuarioId, texto]);
+const createMensagem = async (grupoId, usuarioId, conteudo, tipo = 'texto', anexo_url = null) => {
+    const sql = 'INSERT INTO mensagens (grupo_id, usuario_id, conteudo, tipo, anexo_url) VALUES (?, ?, ?, ?, ?)';
+    const result = await dbRun(sql, [grupoId, usuarioId, conteudo, tipo, anexo_url]);
     return dbGet('SELECT * FROM mensagens WHERE id = ?', [result.lastID]);
 };
 
@@ -157,6 +157,11 @@ const getNumeroMembros = async (grupoId) => {
     return row ? row.count : 0;
 };
 
+const removeById = (id) => {
+    const sql = 'DELETE FROM grupos WHERE id = ?';
+    return dbRun(sql, [id]);
+};
+
 module.exports = {
     create,
     findById,
@@ -172,4 +177,5 @@ module.exports = {
     getPendingRequests,
     getMembers,
     getNumeroMembros,
+    removeById,
 };
